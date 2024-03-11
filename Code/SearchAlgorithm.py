@@ -263,7 +263,7 @@ def distance_to_stations(coord, map):
     auxDict={}
     for key, value in map.stations.items(): #Recorremos los elementos del diccionario
         auxCoord=[value['x'],value['y']]
-        distance=round(euclidean_dist(auxCoord, coord),2) #Calculamos la distance entre el punto en que nos encontramos y el punto donde esta la estacion, redondeado a las centesimas
+        distance=euclidean_dist(auxCoord, coord) #Calculamos la distance entre el punto en que nos encontramos y el punto donde esta la estacion, redondeado a las centesimas
         auxDict[key]=distance
     
     auxDict=dict(sorted(auxDict.items(), key=lambda x: (x[1],x[0]))) #Ordenamos el diccionario de menor a mayor valor, y en caso de empate de menor a mayor id de estacion

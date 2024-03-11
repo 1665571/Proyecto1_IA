@@ -30,7 +30,7 @@ def get_cost(path, subway_map, type_preference):
 
 
 class TestCases(unittest.TestCase):
-    ROOT_FOLDER = '../CityInformation/Lyon_smallCity/'
+    ROOT_FOLDER = 'CityInformation/Lyon_smallCity/'
 
     def setUp(self):
         subway_map = read_station_information(os.path.join(self.ROOT_FOLDER, 'Stations.txt'))
