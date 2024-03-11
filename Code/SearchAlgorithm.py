@@ -63,6 +63,7 @@ def depth_first_search(origin_id, destination_id, map):
         Returns:
             list_of_path[0] (Path Class): the route that goes from origin_id to destination_id
     """
+    print(1)
     pass
 
 
@@ -211,7 +212,7 @@ def distance_to_stations(coord, map):
         From coordinates, it computes the distance to all stations in map.
         Format of the parameter is:
         Args:
-            coord (list):  Two REAL values, which refer to the coordinates of a point in the city.
+            coord (list): Two REAL values, which refer to the coordinates of a point in the city.
             map (object of Map class): All the map information
         Returns:
             (dict): Dictionary containing as keys, all the Indexes of all the stations in the map, and as values, the
@@ -235,5 +236,20 @@ def Astar(origin_id, destination_id, map, type_preference=0):
                             3 - minimum Transfers
         Returns:
             list_of_path[0] (Path Class): The route that goes from origin_id to destination_id
+    """
+    pass
+
+
+def Astar_improved(origin_coord, destination_coord, map):
+    """
+     A* Search algorithm
+     Format of the parameter is:
+        Args:
+            origin_coord (list): Two REAL values, which refer to the coordinates of the starting position
+            destination_coord (list): Two REAL values, which refer to the coordinates of the final position
+            map (object of Map class): All the map information
+
+        Returns:
+            list_of_path[0] (Path Class): The route that goes from origin_coord to destination_coord
     """
     pass
