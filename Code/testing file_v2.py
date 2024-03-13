@@ -2,8 +2,12 @@ from SearchAlgorithm import *
 from SubwayMap import *
 from utils import *
 
+def print_list_of_path_with_heu(path_list):
+    for p in path_list:
+        print("Route: {}, \t Cost: {}".format(p.route, round(p.h,2)))
+
 if __name__=="__main__":
-    ROOT_FOLDER = '../CityInformation/Lyon_SmallCity/'
+    ROOT_FOLDER = 'CityInformation/Lyon_SmallCity/'
     map = read_station_information(os.path.join(ROOT_FOLDER, 'Stations.txt'))
     connections = read_cost_table(os.path.join(ROOT_FOLDER, 'Time.txt'))
     map.add_connection(connections)

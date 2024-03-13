@@ -151,6 +151,15 @@ def calculate_cost(expand_paths, map, type_preference=0):
             Returns:
                 expand_paths (LIST of Paths): Expanded path with updated cost
     """
+    if type_preference == 0:
+        pass
+    if type_preference == 1:
+        
+        pass
+    if type_preference == 2:
+        pass
+    if type_preference == 3:
+        pass
     pass
 
 
