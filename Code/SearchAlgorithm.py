@@ -7,6 +7,7 @@ __author__ = '1665571'
 # Universitat Autonoma de Barcelona
 # _______________________________________________________________________________________
 
+
 from SubwayMap import *
 from utils import *
 import os
@@ -24,7 +25,14 @@ def expand(path, map):
         Returns:
             path_list (list): List of paths that are connected to the given path.
     """
-    pass
+    path_list=[]
+    for key in map.connections[path.last].keys():
+        auxPath=Path(list(path.route))
+        auxPath.g=path.g
+        auxPath.add_route(key)
+        path_list.append(auxPath)
+        
+    return path_list
 
 
 def remove_cycles(path_list):
@@ -36,7 +44,15 @@ def remove_cycles(path_list):
         Returns:
             path_list (list): Expanded paths without cycles.
     """
-    pass
+    noCycleList=[]
+    for path in path_list:
+        cicle=False
+        for valor in path.route:
+            if path.route.count(valor) > 1:
+                cicle=True
+        if not cicle:
+            noCycleList.append(path)
+    return noCycleList
 
 
 def insert_depth_first_search(expand_paths, list_of_path):
@@ -49,7 +65,7 @@ def insert_depth_first_search(expand_paths, list_of_path):
         Returns:
             list_of_path (LIST of Path Class): List of Paths where Expanded Path is inserted
     """
-    pass
+    return expand_paths + list_of_path
 
 
 def depth_first_search(origin_id, destination_id, map):
@@ -63,7 +79,18 @@ def depth_first_search(origin_id, destination_id, map):
         Returns:
             list_of_path[0] (Path Class): the route that goes from origin_id to destination_id
     """
-    pass
+    stack=[Path([origin_id])]
+    while len(stack)>0 and stack[0].last!=destination_id:
+            head=stack[0]
+            expanded_paths=expand(head, map)
+            expanded_paths=remove_cycles(expanded_paths)
+            stack.remove(stack[0])
+            stack=insert_depth_first_search(expanded_paths, stack)
+        
+    if len(stack)>0:
+        return stack[0]
+    else:
+        return []
 
 
 def insert_breadth_first_search(expand_paths, list_of_path):
@@ -76,7 +103,7 @@ def insert_breadth_first_search(expand_paths, list_of_path):
            Returns:
                list_of_path (LIST of Path Class): List of Paths where Expanded Path is inserted
     """
-    pass
+    return list_of_path + expand_paths
 
 
 def breadth_first_search(origin_id, destination_id, map):
@@ -90,7 +117,18 @@ def breadth_first_search(origin_id, destination_id, map):
         Returns:
             list_of_path[0] (Path Class): The route that goes from origin_id to destination_id
     """
-    pass
+    queue=[Path([origin_id])]
+    while len(queue)>0 and queue[0].last!=destination_id:
+            head=queue[0]
+            expanded_paths=expand(head, map)
+            expanded_paths=remove_cycles(expanded_paths)
+            queue.remove(queue[0])
+            queue=insert_breadth_first_search(expanded_paths, queue)
+            
+    if len(queue)>0:
+        return queue[0]
+    else:
+        return []
 
 
 def calculate_cost(expand_paths, map, type_preference=0):
@@ -108,8 +146,27 @@ def calculate_cost(expand_paths, map, type_preference=0):
             Returns:
                 expand_paths (LIST of Paths): Expanded path with updated cost
     """
-    pass
+    for path in expand_paths:
+        if type_preference == 0:
+            path.update_g(1)
 
+        if type_preference == 1: #Minimum time
+            transfer = map.stations[path.penultimate]['name'] == map.stations[path.last]['name'] 
+            if not transfer:
+                path.update_g(map.connections[path.penultimate][path.last])
+            
+        if type_preference == 2:
+            transfer = map.stations[path.penultimate]['name'] == map.stations[path.last]['name']
+            if not transfer:
+                path.update_g(map.connections[path.penultimate][path.last] * map.stations[path.penultimate]['velocity']) #Tiempo * velocidad = Espacio
+          
+    
+        if type_preference == 3:
+            transfer = map.stations[path.penultimate]['name'] == map.stations[path.last]['name']
+            if transfer:
+                path.update_g(1)    
+
+    return expand_paths
 
 def insert_cost(expand_paths, list_of_path):
     """
@@ -121,8 +178,11 @@ def insert_cost(expand_paths, list_of_path):
            Returns:
                list_of_path (LIST of Path Class): List of Paths where expanded_path is inserted according to cost
     """
-    pass
+    auxList=expand_paths+list_of_path
+    auxList=sorted(auxList, key=lambda x:(x.g, len(x.route)))
+    return auxList
 
+ 
 
 def uniform_cost_search(origin_id, destination_id, map, type_preference=0):
     """
@@ -140,7 +200,21 @@ def uniform_cost_search(origin_id, destination_id, map, type_preference=0):
         Returns:
             list_of_path[0] (Path Class): The route that goes from origin_id to destination_id
     """
-    pass
+    pathList=[Path([origin_id])]
+    while len(pathList)>0 and pathList[0].last!=destination_id:
+            head=pathList[0]
+            expanded_paths=expand(head, map)
+            expanded_paths=remove_cycles(expanded_paths)
+            
+            expanded_paths=calculate_cost(expanded_paths, map, type_preference)
+            
+            pathList.remove(pathList[0])
+            pathList=insert_cost(expanded_paths, pathList)
+        
+    if len(pathList)>0:
+        return pathList[0]
+    else:
+        return []
 
 
 def calculate_heuristics(expand_paths, map, destination_id, type_preference=0):
@@ -211,12 +285,20 @@ def distance_to_stations(coord, map):
         From coordinates, it computes the distance to all stations in map.
         Format of the parameter is:
         Args:
-            coord (list):  Two REAL values, which refer to the coordinates of a point in the city.
+            coord (list): Two REAL values, which refer to the coordinates of a point in the city.
             map (object of Map class): All the map information
         Returns:
             (dict): Dictionary containing as keys, all the Indexes of all the stations in the map, and as values, the
             distance between each station and the coord point
     """
+    auxDict={}
+    for key, value in map.stations.items(): #Recorremos los elementos del diccionario
+        auxCoord=[value['x'],value['y']]
+        distance=euclidean_dist(auxCoord, coord) #Calculamos la distance entre el punto en que nos encontramos y el punto donde esta la estacion, redondeado a las centesimas
+        auxDict[key]=distance
+    
+    auxDict=dict(sorted(auxDict.items(), key=lambda x: (x[1],x[0]))) #Ordenamos el diccionario de menor a mayor valor, y en caso de empate de menor a mayor id de estacion
+    return auxDict
     pass
 
 
@@ -236,4 +318,20 @@ def Astar(origin_id, destination_id, map, type_preference=0):
         Returns:
             list_of_path[0] (Path Class): The route that goes from origin_id to destination_id
     """
+
+
+
+def Astar_improved(origin_coord, destination_coord, map):
+    """
+     A* Search algorithm
+     Format of the parameter is:
+        Args:
+            origin_coord (list): Two REAL values, which refer to the coordinates of the starting position
+            destination_coord (list): Two REAL values, which refer to the coordinates of the final position
+            map (object of Map class): All the map information
+
+        Returns:
+            list_of_path[0] (Path Class): The route that goes from origin_coord to destination_coord
+    """
     pass
+
