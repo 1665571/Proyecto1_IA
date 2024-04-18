@@ -20,11 +20,16 @@ if __name__=="__main__":
 
     ###BELOW HERE YOU CAN CALL ANY FUNCTION THAT YOU HAVE PROGRAMED TO ANSWER THE QUESTIONS FOR THE TEST###
 
-    #example
+    #Ejecutar tests aqui
     testing=TestCases()
     testing.setUp()
-    testing.test_uniform_cost_search()
-
+    # try:
+    #     testing.test_Astar_improved()
+    #     print("Test pasados con exito")
+    # except Exception as e:
+    #     print(e)
+    
+    testing.test_Astar_improved()
     # path1=Path([1,2,3])
     # path1.g=2
     # path2=Path([1,2,5])

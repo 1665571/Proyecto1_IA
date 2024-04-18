@@ -4,8 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>1af30e7c-f779-49dd-966d-bb942f76b3d8</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>Code\testing file_v2.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -31,7 +30,7 @@
     <Compile Include="Code\SearchAlgorithm.py" />
     <Compile Include="Code\SubwayMap.py" />
     <Compile Include="Code\TestCases.py" />
-    <Compile Include="Code\testing file.py" />
+    <Compile Include="Code\testing file_v2.py" />
     <Compile Include="Code\utils.py" />
   </ItemGroup>
   <ItemGroup>

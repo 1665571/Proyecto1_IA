@@ -151,9 +151,7 @@ def calculate_cost(expand_paths, map, type_preference=0):
             path.update_g(1)
 
         if type_preference == 1: #Minimum time
-            transfer = map.stations[path.penultimate]['name'] == map.stations[path.last]['name'] 
-            if not transfer:
-                path.update_g(map.connections[path.penultimate][path.last])
+            path.update_g(map.connections[path.penultimate][path.last])
             
         if type_preference == 2:
             transfer = map.stations[path.penultimate]['name'] == map.stations[path.last]['name']
@@ -235,8 +233,49 @@ def calculate_heuristics(expand_paths, map, destination_id, type_preference=0):
         Returns:
             expand_paths (LIST of Path Class): Expanded paths with updated heuristics
     """
-    pass
+    for path in expand_paths:
+        if type_preference == 0:
+            desti = path.last == destination_id 
+            if not desti:
+                path.update_h(1)
+            else:
+                path.update_h(0)
+            
+        if type_preference == 1:
+            desti = path.last == destination_id 
+            if not desti:
+                #Recogemos las cordenadas de la ultima estacion del Path
+                lastCoord=[map.stations[path.last]['x'], map.stations[path.last]['y']] 
+                #Recogemos las coordenadas de la estación destino
+                destinationCoord=[map.stations[destination_id]['x'], map.stations[destination_id]['y']]
+                #Calculamos la distancia euclideana entre las dos estaciones y actualizamos la heurística
+                #En este caso dividimos la distancia en linea recta desde la estacion hasta el destino entre la velocidad de la linea
+                maxVelocityKey=max(map.velocity, key=map.velocity.get)
+                path.update_h(euclidean_dist(lastCoord, destinationCoord) / map.velocity[maxVelocityKey])
+            else:
+                path.update_h(0)
 
+        if type_preference == 2:
+            desti = path.last == destination_id 
+            if not desti:
+                #Recogemos las cordenadas de la ultima estacion del Path
+                lastCoord=[map.stations[path.last]['x'], map.stations[path.last]['y']] 
+                #Recogemos las coordenadas de la estación destino
+                destinationCoord=[map.stations[destination_id]['x'], map.stations[destination_id]['y']]
+                #Calculamos la distancia euclideana entre las dos estaciones y actualizamos la heurística
+                path.update_h(euclidean_dist(lastCoord, destinationCoord))
+            else:
+                path.update_h(0)
+                
+        if type_preference == 3:
+            desti = path.last == destination_id 
+            transfer = map.stations[path.penultimate]['name'] == map.stations[path.last]['name'] 
+            if not desti and transfer:
+                path.update_h(1)
+            elif desti:
+                path.update_h(0)
+    return expand_paths
+    
 
 def update_f(expand_paths):
     """
@@ -247,7 +286,9 @@ def update_f(expand_paths):
          Returns:
              expand_paths (LIST of Path Class): Expanded paths with updated costs
     """
-    pass
+    for path in expand_paths:
+        path.update_f()
+    return expand_paths
 
 
 def remove_redundant_paths(expand_paths, list_of_path, visited_stations_cost):
@@ -264,7 +305,19 @@ def remove_redundant_paths(expand_paths, list_of_path, visited_stations_cost):
              list_of_path (LIST of Path Class): list_of_path without redundant paths
              visited_stations_cost (dict): Updated visited stations cost
     """
-    pass
+    for path in expand_paths:
+        if path.last in visited_stations_cost and path.g > visited_stations_cost[path.last]:
+                expand_paths.remove(path)
+        else:
+            visited_stations_cost[path.last]=path.g
+    
+    for path in list_of_path:
+        if path.last in visited_stations_cost and path.g > visited_stations_cost[path.last]:
+                list_of_path.remove(path)
+        else:
+            visited_stations_cost[path.last]=path.g
+    
+    return expand_paths, list_of_path, visited_stations_cost
 
 
 def insert_cost_f(expand_paths, list_of_path):
@@ -277,7 +330,9 @@ def insert_cost_f(expand_paths, list_of_path):
            Returns:
                list_of_path (LIST of Path Class): List of Paths where expanded_path is inserted according to f
     """
-    pass
+    auxList=expand_paths+list_of_path
+    auxList=sorted(auxList, key=lambda x:(x.f, len(x.route)))
+    return auxList
 
 
 def distance_to_stations(coord, map):
@@ -318,6 +373,24 @@ def Astar(origin_id, destination_id, map, type_preference=0):
         Returns:
             list_of_path[0] (Path Class): The route that goes from origin_id to destination_id
     """
+    pathList=[Path([origin_id])]
+    stationsCost={}
+    while pathList and pathList[0].last!=destination_id:
+            head=pathList.pop(0)
+            expanded_paths=expand(head, map)
+            expanded_paths=remove_cycles(expanded_paths)
+            
+            expanded_paths=calculate_cost(expanded_paths, map, type_preference)
+            expanded_paths=calculate_heuristics(expanded_paths, map, destination_id, type_preference)
+            expanded_paths=update_f(expanded_paths)
+            expanded_paths, pathList, stationsCost=remove_redundant_paths(expanded_paths, pathList, stationsCost)
+            
+            pathList=insert_cost_f(expanded_paths, pathList)
+        
+    if pathList:
+        return pathList[0]
+    else:
+        return []
 
 
 
@@ -333,5 +406,62 @@ def Astar_improved(origin_coord, destination_coord, map):
         Returns:
             list_of_path[0] (Path Class): The route that goes from origin_coord to destination_coord
     """
-    pass
+    def Astar_improved(origin_coord:list[int], destination_coord:list[int], map:Map) -> Path:
+        visited_stations_cost = {}
+        results = []
+
+        minimum_dist = euclidean_dist(origin_coord,destination_coord)/5
+        more_prox = distance_to_stations(origin_coord,map)
+
+        for i,j in more_prox.items():
+            new_list = []
+            list_b = [Path(0)]
+            list_b[0].add_route(i)
+            list_b[0].g = j/5
+            while list_b and list_b[0].route[-1] != -1:
+                new_list = expand(list_b[0],map)
+                new_list = remove_cycles(new_list)
+                for path in new_list:
+                    time_train = map.connections[path.penultimate][path.last]
+                    time_path_1 = euclidean_dist([map.stations[path.penultimate]['x'],map.stations[path.penultimate]['y']],destination_coord)/5
+                    time_path_2 = euclidean_dist([map.stations[path.last]['x'],map.stations[path.last]['y']],destination_coord)/5
+                    if time_path_2 + time_train > time_path_1:
+                        path.update_g(time_path_1)
+                        path.route[-1] = -1
+                        path.last = path.route[-1]
+                    elif time_path_1 > time_train:
+                        path.update_g(time_train)   
+                    else:
+                        path.update_g(time_path_1)
+                        path.route[-1] = -1
+                        path.last = path.route[-1]
+
+                for path in new_list:
+                    if path.last == -1:
+                        path.h = 0
+                    else:
+                        path.h = euclidean_dist([map.stations[path.last]['x'],map.stations[path.last]['y']],destination_coord)/45
+                
+                new_list = update_f(new_list)
+                new_list,list_b,visited_stations_cost = remove_redundant_paths(new_list,list_b,visited_stations_cost)
+                list_b = insert_cost_f(new_list,list_b[1:])
+
+            if list_b:
+                results.append(list_b[0])
+            
+        
+        path = Path([0,-1])
+        path.f = minimum_dist
+        for k in results:
+            if k.f == minimum_dist:
+                if len(k.route) < len(path.route):
+                    path = k
+                    minimum_dist = k.f
+            elif k.f <= minimum_dist:
+                minimum_dist = k.f
+                path = k
+
+        return path
+    
+   
 
